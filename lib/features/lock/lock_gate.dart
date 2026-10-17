@@ -60,7 +60,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
           );
         }
         final unlocked = status == LockStatus.unlocked;
-        return Stack(children: [
+        // StackFit.expand is essential: while locked the Offstage child has size
+        // zero, so without it the Stack collapses to 0x0 under loose constraints
+        // and the lock screen is painted into nothing (a black screen).
+        return Stack(fit: StackFit.expand, children: [
           // Hidden + non-interactive while locked, but state is preserved.
           Offstage(offstage: !unlocked, child: TickerMode(enabled: unlocked, child: widget.child)),
           if (!unlocked)

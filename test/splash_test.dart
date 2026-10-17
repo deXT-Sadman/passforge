@@ -29,4 +29,28 @@ void main() {
     expect(find.text('PassForge'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  // Regression: a Stack whose only non-positioned child is Offstage (exactly
+  // what LockGate looks like while locked) used to collapse to 0x0 inside the
+  // gate, leaving a black screen.
+  testWidgets('a locked-style Stack child fills the whole screen', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: SplashGate(
+        listenable: ValueNotifier(true),
+        isReady: () => true,
+        minDuration: const Duration(milliseconds: 100),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const Offstage(child: SizedBox.expand()),
+            Positioned.fill(child: Container(key: const Key('lock'), color: Colors.red)),
+          ],
+        ),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(tester.getSize(find.byKey(const Key('lock'))), tester.view.physicalSize / tester.view.devicePixelRatio);
+  });
 }

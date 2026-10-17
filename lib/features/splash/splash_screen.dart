@@ -60,7 +60,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     final title = _phase(0.55, 0.85);
     final tagline = _phase(0.7, 1.0);
 
-    return ColoredBox(
+    // Material (not ColoredBox) so Text gets a proper default style; without a
+    // Material ancestor Flutter draws debug yellow underlines under the text.
+    return Material(
       color: AppColors.background,
       child: Center(
         child: Column(
@@ -244,6 +246,12 @@ class _SplashGateState extends State<SplashGate> {
         final done = _minElapsed && widget.isReady();
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 450),
+          // Default layout gives children *loose* constraints, which lets a
+          // Stack-based child (LockGate) collapse. Force full-size instead.
+          layoutBuilder: (current, previous) => Stack(
+            fit: StackFit.expand,
+            children: [...previous, ?current],
+          ),
           child: done
               ? KeyedSubtree(key: const ValueKey('app'), child: widget.child)
               : const SplashScreen(key: ValueKey('splash')),
