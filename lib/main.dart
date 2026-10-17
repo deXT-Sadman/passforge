@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/lock/lock_controller.dart';
 import 'features/lock/lock_gate.dart';
+import 'features/splash/splash_screen.dart';
 import 'features/sync/drive_service.dart';
 import 'features/sync/sync_controller.dart';
 import 'features/vault/data/vault_repository.dart';
@@ -59,7 +60,11 @@ class _PassForgeAppState extends State<PassForgeApp> {
         darkTheme: AppTheme.dark,
         themeMode: _theme.mode,
         // The lock sits above the Navigator, so it also covers pushed screens.
-        builder: (context, child) => LockGate(controller: _lock, child: child!),
+        builder: (context, child) => SplashGate(
+          listenable: _lock,
+          isReady: () => _lock.status != LockStatus.loading,
+          child: LockGate(controller: _lock, child: child!),
+        ),
         home: HomeScreen(controller: _vault, sync: _sync, theme: _theme),
       ),
     );
