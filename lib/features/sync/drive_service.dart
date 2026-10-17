@@ -7,8 +7,9 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 
 /// Web-type OAuth client ID from Google Cloud Console (see setup steps).
-/// Not a secret. Leave null if you use google-services.json instead.
-const String? kGoogleServerClientId = null;
+/// Not a secret.
+const String kGoogleServerClientId =
+    '1029780966704-mtmnkov3i2sg7fqbdug7k25381lfto6m.apps.googleusercontent.com';
 
 /// Talks to Google Drive's hidden per-app storage (`appDataFolder`).
 ///
