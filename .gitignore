@@ -46,3 +46,33 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# --- Secrets & credentials: never commit these ---
+# Google OAuth downloads (contain client secrets)
+client_secret*.json
+client_secrets*.json
+*.apps.googleusercontent.com.json
+# Firebase / Google services configs
+google-services.json
+GoogleService-Info.plist
+firebase_app_id_file.json
+# Service-account / private keys
+service-account*.json
+*-credentials.json
+*.pem
+*.p12
+*.key
+# Android signing (also covered in android/.gitignore)
+*.jks
+*.keystore
+key.properties
+# Environment files
+.env
+.env.*
+*.env
+
+# --- Local app data (a vault must never reach GitHub) ---
+vault.json
+*.hive
+*.lock
+!pubspec.lock
