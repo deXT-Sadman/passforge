@@ -39,6 +39,14 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   encrypt: ^5.0.3
   uuid: ^4.6.0
+  hive_ce: ^2.22.0
+  hive_ce_flutter: ^2.5.0
+  local_auth: ^3.0.2
+  pointycastle: ^3.9.1
+  google_sign_in: ^7.2.0
+  googleapis: ^17.0.0
+  extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

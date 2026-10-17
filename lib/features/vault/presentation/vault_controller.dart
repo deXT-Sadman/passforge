@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/security/crypto_service.dart';
+import '../../sync/vault_snapshot.dart';
 import '../data/vault_repository.dart';
 import '../domain/password_item.dart';
 
@@ -13,6 +14,7 @@ class VaultController extends ChangeNotifier {
   final CryptoService crypto;
 
   List<PasswordItem> _items = [];
+  Map<String, DateTime> _tombstones = {};
   String _query = '';
   PasswordCategory? _category;
   bool _loading = true;
@@ -37,6 +39,7 @@ class VaultController extends ChangeNotifier {
 
   Future<void> load() async {
     _items = await repository.loadAll();
+    _tombstones = await repository.loadTombstones();
     _loading = false;
     notifyListeners();
   }
@@ -92,17 +95,66 @@ class VaultController extends ChangeNotifier {
 
   Future<void> delete(PasswordItem item) async {
     _items.removeWhere((i) => i.id == item.id);
+    // Leave a marker so sync deletes it on other devices too.
+    _tombstones[item.id] = DateTime.now().toUtc();
     await _persist();
   }
 
   /// Re-inserts a deleted item (snackbar "Undo").
   Future<void> restore(PasswordItem item) async {
     _items.add(item);
+    _tombstones.remove(item.id);
+    await _persist();
+  }
+
+  // ---- Cloud sync support ---------------------------------------------
+
+  /// Decrypts everything into a portable snapshot (stays in memory only).
+  Future<VaultSnapshot> exportSnapshot() async => VaultSnapshot(
+        entries: {
+          for (final i in _items)
+            i.id: BackupEntry(
+              id: i.id,
+              title: i.title,
+              username: i.username,
+              password: await crypto.decrypt(i.encryptedPassword),
+              category: i.category,
+              updatedAt: i.updatedAt.toUtc(),
+            ),
+        },
+        tombstones: Map.of(_tombstones),
+      );
+
+  /// Replaces local data with a merged snapshot. Items whose timestamp is
+  /// unchanged keep their existing ciphertext; only new/changed ones are
+  /// re-encrypted with this device's key.
+  Future<void> applySnapshot(VaultSnapshot merged) async {
+    final local = {for (final i in _items) i.id: i};
+    final next = <PasswordItem>[];
+    for (final e in merged.entries.values) {
+      final existing = local[e.id];
+      if (existing != null && existing.updatedAt.isAtSameMomentAs(e.updatedAt)) {
+        next.add(existing);
+      } else {
+        next.add(PasswordItem(
+          id: e.id,
+          title: e.title,
+          username: e.username,
+          encryptedPassword: await crypto.encrypt(e.password),
+          category: e.category,
+          iconPath: existing?.iconPath, // logos are device-local, not synced
+          updatedAt: e.updatedAt,
+        ));
+      }
+    }
+    _items = next;
+    _tombstones = Map.of(merged.tombstones);
     await _persist();
   }
 
   Future<void> _persist() async {
     await repository.saveAll(_items);
+    await repository.saveTombstones(_tombstones);
     notifyListeners();
   }
 }

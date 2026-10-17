@@ -1,30 +1,23 @@
 import 'package:encrypt/encrypt.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// AES-256-GCM encryption for stored passwords.
+import 'key_store.dart';
+
+/// Field-level AES-256-GCM encryption for stored passwords.
 ///
-/// The 256-bit key is generated once and kept in the platform keystore
-/// (Android Keystore / iOS Keychain) via [FlutterSecureStorage]. It never
-/// touches the vault file. Each encryption uses a fresh random IV; the stored
-/// format is `base64(iv):base64(ciphertext+tag)`.
+/// This is a second layer on top of the encrypted Hive box: even if the box
+/// file were decrypted, passwords stay ciphertext. It uses its own key, separate
+/// from the box key. Each encryption uses a fresh random IV; the stored format
+/// is `base64(iv):base64(ciphertext+tag)`.
 class CryptoService {
-  CryptoService({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+  CryptoService(this._keys);
 
-  static const _keyName = 'passforge_master_key_v1';
-  final FlutterSecureStorage _storage;
+  static const _keyName = 'passforge_field_key_v1';
+  final KeyStore _keys;
   Encrypter? _encrypter;
 
-  Future<Encrypter> _getEncrypter() async {
-    if (_encrypter != null) return _encrypter!;
-    var encoded = await _storage.read(key: _keyName);
-    if (encoded == null) {
-      encoded = Key.fromSecureRandom(32).base64;
-      await _storage.write(key: _keyName, value: encoded);
-    }
-    return _encrypter =
-        Encrypter(AES(Key.fromBase64(encoded), mode: AESMode.gcm));
-  }
+  Future<Encrypter> _getEncrypter() async =>
+      _encrypter ??= Encrypter(
+          AES(Key(await _keys.getOrCreateKey(_keyName)), mode: AESMode.gcm));
 
   Future<String> encrypt(String plainText) async {
     final iv = IV.fromSecureRandom(12); // 96-bit nonce recommended for GCM

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/security/clipboard_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../sync/sync_controller.dart';
+import '../../sync/sync_sheet.dart';
 import '../domain/password_item.dart';
 import 'password_form_screen.dart';
 import 'vault_controller.dart';
@@ -9,9 +11,10 @@ import 'widgets/password_card.dart';
 
 /// Home dashboard: header, search, category filters and the password list/grid.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.controller});
+  const HomeScreen({super.key, required this.controller, required this.sync});
 
   final VaultController controller;
+  final SyncController sync;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -101,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Header(
+                  onSync: () => showSyncSheet(context, widget.sync),
                   gridView: _gridView,
                   onToggleView: () => setState(() => _gridView = !_gridView),
                 ),
@@ -167,8 +171,13 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.gridView, required this.onToggleView});
+  const _Header({
+    required this.gridView,
+    required this.onToggleView,
+    required this.onSync,
+  });
 
+  final VoidCallback onSync;
   final bool gridView;
   final VoidCallback onToggleView;
 
@@ -196,6 +205,11 @@ class _Header extends StatelessWidget {
             Text('Forge Your Own Security.',
                 style: text.bodySmall?.copyWith(color: Colors.white54)),
           ]),
+        ),
+        IconButton(
+          tooltip: 'Google Drive backup',
+          onPressed: onSync,
+          icon: const Icon(Icons.cloud_sync_rounded),
         ),
         IconButton(
           tooltip: gridView ? 'List view' : 'Grid view',
