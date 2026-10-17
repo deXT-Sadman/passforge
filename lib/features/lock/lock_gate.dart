@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
 import 'lock_controller.dart';
 import 'lock_screen.dart';
 
@@ -55,9 +54,9 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
       builder: (context, _) {
         final status = widget.controller.status;
         if (status == LockStatus.loading) {
-          return const ColoredBox(
-            color: AppColors.background,
-            child: Center(child: CircularProgressIndicator()),
+          return ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: const Center(child: CircularProgressIndicator()),
           );
         }
         final unlocked = status == LockStatus.unlocked;

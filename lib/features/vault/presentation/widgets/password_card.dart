@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../domain/password_item.dart';
 import 'platform_avatar.dart';
 
@@ -18,7 +17,9 @@ class PasswordCard extends StatelessWidget {
   });
 
   final PasswordItem item;
-  final VoidCallback onCopy;
+
+  /// Copies the password; returns true if it worked (drives the ✓ animation).
+  final Future<bool> Function() onCopy;
   final VoidCallback onTap;
   final ValueChanged<CardAction> onAction;
 
@@ -28,18 +29,9 @@ class PasswordCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
 
-    final copyButton = IconButton.filledTonal(
-      tooltip: 'Copy password (clears in 30s)',
-      onPressed: onCopy,
-      style: IconButton.styleFrom(
-        // Slimmer button in grid tiles so the card content fits its height.
-        visualDensity: compact ? VisualDensity.compact : null,
-        backgroundColor: AppColors.primary.withValues(alpha: 0.16),
-        foregroundColor: AppColors.primary,
-      ),
-      icon: const Icon(Icons.copy_rounded, size: 20),
-    );
+    final copyButton = _CopyButton(onCopy: onCopy, compact: compact);
 
     final menu = PopupMenuButton<CardAction>(
       tooltip: 'More',
@@ -63,7 +55,7 @@ class PasswordCard extends StatelessWidget {
         Text(item.username,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: text.bodySmall?.copyWith(color: Colors.white60)),
+            style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
       ],
     );
 
@@ -87,8 +79,8 @@ class PasswordCard extends StatelessWidget {
                     titleBlock,
                     const SizedBox(height: 10),
                     Row(children: [
-                      _CategoryChip(category: item.category),
-                      const Spacer(),
+                      Flexible(child: _CategoryChip(category: item.category)),
+                      const SizedBox(width: 8),
                       copyButton,
                     ]),
                   ],
@@ -115,17 +107,73 @@ class PasswordCard extends StatelessWidget {
   }
 }
 
+/// Copy button that morphs into a green check for 2s after a successful copy.
+class _CopyButton extends StatefulWidget {
+  const _CopyButton({required this.onCopy, required this.compact});
+
+  final Future<bool> Function() onCopy;
+  final bool compact;
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _done = false;
+
+  Future<void> _press() async {
+    final ok = await widget.onCopy();
+    if (!ok || !mounted) return;
+    setState(() => _done = true);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (mounted) setState(() => _done = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = _done ? scheme.secondary : scheme.primary;
+
+    return IconButton.filledTonal(
+      tooltip: 'Copy password (clears in 30s)',
+      onPressed: _press,
+      style: IconButton.styleFrom(
+        // Slimmer button in grid tiles so the card content fits its height.
+        visualDensity: widget.compact ? VisualDensity.compact : null,
+        backgroundColor: color.withValues(alpha: 0.16),
+        foregroundColor: color,
+      ),
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        transitionBuilder: (child, anim) => ScaleTransition(
+          scale: anim,
+          child: FadeTransition(opacity: anim, child: child),
+        ),
+        child: Icon(
+          _done ? Icons.check_rounded : Icons.copy_rounded,
+          key: ValueKey(_done),
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({required this.category});
   final PasswordCategory category;
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(category.icon, size: 13, color: AppColors.primary),
+      Icon(category.icon, size: 13, color: primary),
       const SizedBox(width: 4),
-      Text(category.label,
-          style: const TextStyle(fontSize: 12, color: AppColors.primary)),
+      Flexible(
+        child: Text(category.label,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, color: primary)),
+      ),
     ]);
   }
 }

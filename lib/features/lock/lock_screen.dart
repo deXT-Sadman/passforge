@@ -127,7 +127,7 @@ class _LockScreenState extends State<LockScreen> {
     final canUseBio = !_isSetup && _lock.biometricEnabled;
 
     return Material(
-      color: AppColors.background,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -156,7 +156,7 @@ class _LockScreenState extends State<LockScreen> {
                     _subtitle ?? '',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: isError ? AppColors.error : Colors.white60),
+                        color: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -227,7 +227,7 @@ class _Keypad extends StatelessWidget {
             child: onTap == null
                 ? null
                 : Material(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     shape: const CircleBorder(),
                     child: InkWell(
                         customBorder: const CircleBorder(),

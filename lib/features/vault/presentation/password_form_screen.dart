@@ -202,8 +202,6 @@ class _PasswordFormScreenState extends State<PasswordFormScreen> {
               onPressed: _saving ? null : _submit,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(54),
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
               ),
@@ -259,7 +257,7 @@ class _IconPicker extends StatelessWidget {
       if (iconPath != null)
         TextButton(onPressed: onClear, child: const Text('Remove logo'))
       else
-        const Text('Optional logo', style: TextStyle(color: Colors.white54)),
+        Text('Optional logo', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
     ]);
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'core/security/crypto_service.dart';
 import 'core/security/key_store.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'features/lock/lock_controller.dart';
 import 'features/lock/lock_gate.dart';
 import 'features/sync/drive_service.dart';
@@ -36,9 +37,11 @@ class _PassForgeAppState extends State<PassForgeApp> {
     vault: _vault,
     keys: _keys,
   )..init();
+  late final ThemeController _theme = ThemeController(_keys)..load();
 
   @override
   void dispose() {
+    _theme.dispose();
     _lock.dispose();
     _sync.dispose();
     _vault.dispose();
@@ -47,15 +50,18 @@ class _PassForgeAppState extends State<PassForgeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'PassForge',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
-      // The lock sits above the Navigator, so it also covers pushed screens.
-      builder: (context, child) => LockGate(controller: _lock, child: child!),
-      home: HomeScreen(controller: _vault, sync: _sync),
+    return ListenableBuilder(
+      listenable: _theme,
+      builder: (context, _) => MaterialApp(
+        title: 'PassForge',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: _theme.mode,
+        // The lock sits above the Navigator, so it also covers pushed screens.
+        builder: (context, child) => LockGate(controller: _lock, child: child!),
+        home: HomeScreen(controller: _vault, sync: _sync, theme: _theme),
+      ),
     );
   }
 }
